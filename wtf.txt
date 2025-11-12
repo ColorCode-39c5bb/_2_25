@@ -1,0 +1,8 @@
+// 假设允许创建泛型数组
+ShapeWithDimension<Rectangle>[] rectangles = new ShapeWithDimension<Rectangle>[2];
+Object[] objects = rectangles;  // 数组是协变的
+
+// 这里会出现运行时错误，但编译时无法检测
+objects[0] = new ShapeWithDimension<Circle>(...);  // 应该报错但不会
+
+666才发现数组的默认继承（协变）竟然是最大的Bug

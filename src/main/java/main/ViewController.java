@@ -12,7 +12,9 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 import javafx.util.converter.NumberStringConverter;
+import main.dimension.ShapeWithDimension;
 
 public class ViewController implements Initializable {
     @FXML Pane controller;
@@ -23,8 +25,11 @@ public class ViewController implements Initializable {
     TextField[] textFields = new TextField[6];
     double[] values = new double[]{1,1,1,3,3,3};
 
-    Rectangle[] body = new Rectangle[2];
-    Rectangle[] neck = new Rectangle[2];
+    // Rectangle[] body = new Rectangle[2];
+    // Rectangle[] neck = new Rectangle[2];
+    ShapeWithDimension<Shape>[] body = new ShapeWithDimension[2];
+    ShapeWithDimension<Shape>[] neck = new ShapeWithDimension[2];
+
     Label[] reactiveLabels = new Label[2];
 
 
@@ -37,38 +42,26 @@ public class ViewController implements Initializable {
             textFields[i] = (TextField)((Group)controller.getChildren().get(i)).getChildren().get(1);
         } 
 
-        // // App.stage.maximizedProperty().addListener((obs, oldVal, newVal)->draw());
-
-        // for (int i = 0; i < sliders.length; i++) {
-        //     final int indexMe = i;
-        //     sliders[indexMe].valueProperty().addListener((observable, oldValue, newValue) -> {
-        //         values[indexMe] = newValue.doubleValue();
-        //         textFields[indexMe].setText(String.valueOf(values[indexMe]));
-        //         draw();
-        //     });
-        // }
-        // for (int i = 0; i < textFields.length; i++) {
-        //     final int indexMe = i;
-        //     textFields[indexMe].focusedProperty().addListener((observable, oldValue, newValue) -> {
-        //         try {
-        //             values[indexMe] = Double.valueOf(textFields[indexMe].getText());
-        //         } catch (NumberFormatException e) {
-        //             return;
-        //         }
-        //         sliders[indexMe].setValue(values[indexMe]);
-        //         draw();
-        //     });
-        // }
-        for(int i=0; i<textFields.length; i++){
+        for(short i=0; i<textFields.length; i++){
             textFields[i].textProperty().bindBidirectional(sliders[i].valueProperty(), new NumberStringConverter());
         }
 
 
 
-        neck[0] = (Rectangle)shape.getChildren().get(0);
-        body[0] = (Rectangle)shape.getChildren().get(1);
-        neck[1] = (Rectangle)shape.getChildren().get(2);
-        body[1] = (Rectangle)shape.getChildren().get(3);
+        // neck[0] = (Rectangle)shape.getChildren().get(0);
+        // body[0] = (Rectangle)shape.getChildren().get(1);
+        // neck[1] = (Rectangle)shape.getChildren().get(2);
+        // body[1] = (Rectangle)shape.getChildren().get(3);
+        body[0] = new ShapeWithDimension<>((Rectangle)shape.getChildren().get(1), (b) -> {
+            Double[] points = new Double[]{
+                b.getMinX(), b.getMinY(),
+                b.getMaxX(), b.getMinY(),
+                b.getMaxX(), b.getMaxY(),
+                b.getMinX(), b.getMaxY(),
+                b.getMinX(), b.getMinY()
+            };
+            return points;
+        });
 
         reactiveLabels[0] = (Label)reactive.getChildren().get(0);
         reactiveLabels[1] = (Label)reactive.getChildren().get(1);
