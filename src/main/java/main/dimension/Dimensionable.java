@@ -1,10 +1,9 @@
 package main.dimension;
 
-import javafx.beans.property.ObjectProperty;
+import javafx.scene.shape.Shape;
 
-public sealed interface Dimensionable permits ShapeWithDimension {
-    public ObjectProperty<byte[]> getDimensionTypeProperty();
-    public void setDimensionType(byte[] types);
-
-    // public double[] getPointsDimension();
+// public sealed interface Dimensionable permits ShapeWithDimension {
+public interface Dimensionable {
+    public Shape getShape();
+    public Dimension getDimension();
 }

@@ -12,64 +12,87 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape;
 import javafx.util.converter.NumberStringConverter;
 import main.dimension.ShapeWithDimension;
+import main.dimension.ShapeWithDimension.DimensionType;
 
 public class ViewController implements Initializable {
-    @FXML Pane controller;
-    @FXML Pane shape;
+    @FXML Pane pane_controller;
+    @FXML Pane pane_shape;
     @FXML Group reactive;
 
     Slider[] sliders = new Slider[6];
     TextField[] textFields = new TextField[6];
     double[] values = new double[]{1,1,1,3,3,3};
 
-    // Rectangle[] body = new Rectangle[2];
-    // Rectangle[] neck = new Rectangle[2];
-    ShapeWithDimension<Shape>[] body = new ShapeWithDimension[2];
-    ShapeWithDimension<Shape>[] neck = new ShapeWithDimension[2];
+    ShapeWithDimension<Rectangle>[] body = new ShapeWithDimension[2];
+    ShapeWithDimension<Rectangle>[] neck = new ShapeWithDimension[2];
 
     Label[] reactiveLabels = new Label[2];
-
-
-    // boolean needUpdate = false;
 
     @Override
     public void initialize(URL arg0, ResourceBundle arg1) {
         for(int i = 0; textFields.length > i; i++){
-            sliders[i] = (Slider)((Group)controller.getChildren().get(i)).getChildren().get(0);
-            textFields[i] = (TextField)((Group)controller.getChildren().get(i)).getChildren().get(1);
+            sliders[i] = (Slider)((Group)pane_controller.getChildren().get(i)).getChildren().get(0);
+            textFields[i] = (TextField)((Group)pane_controller.getChildren().get(i)).getChildren().get(1);
         } 
 
         for(short i=0; i<textFields.length; i++){
             textFields[i].textProperty().bindBidirectional(sliders[i].valueProperty(), new NumberStringConverter());
+            final int index = i;
+            sliders[i].valueProperty().addListener((obs, oldVal, newVal)->{
+                values[index] = sliders[index].getValue();
+                double valueMax = Arrays.stream(values).max().getAsDouble();
+                draw(1/valueMax * (Math.min(pane_shape.getWidth()/2, pane_shape.getHeight())-8));
+            });
         }
 
-
-
-        // neck[0] = (Rectangle)shape.getChildren().get(0);
-        // body[0] = (Rectangle)shape.getChildren().get(1);
-        // neck[1] = (Rectangle)shape.getChildren().get(2);
-        // body[1] = (Rectangle)shape.getChildren().get(3);
-        body[0] = new ShapeWithDimension<>((Rectangle)shape.getChildren().get(1), (b) -> {
-            Double[] points = new Double[]{
-                b.getMinX(), b.getMinY(),
-                b.getMaxX(), b.getMinY(),
-                b.getMaxX(), b.getMaxY(),
-                b.getMinX(), b.getMaxY(),
-                b.getMinX(), b.getMinY()
-            };
-            return points;
-        });
+        neck[0] = new ShapeWithDimension<>(
+            (Rectangle)pane_shape.getChildren().get(0),
+            new DimensionType[]{
+                DimensionType.WIDTH.customTextBindTo(textFields[0].textProperty()).customTextPoisition(-0.5f), 
+                DimensionType.HEIGHT.customTextBindTo(textFields[2].textProperty())
+            }
+        );
+        body[0] = new ShapeWithDimension<>(
+            (Rectangle)pane_shape.getChildren().get(1),
+            new DimensionType[]{
+                DimensionType.WIDTH.customTextBindTo(textFields[3].textProperty()).customTranslate(0,5), 
+                DimensionType.HEIGHT.customTextBindTo(textFields[5].textProperty())
+            }
+        );
+        neck[1] = new ShapeWithDimension<>(
+            (Rectangle)pane_shape.getChildren().get(2),
+            new DimensionType[]{
+                DimensionType.WIDTH.customTextBindTo(textFields[0].textProperty()).customTextPoisition(-0.5f),
+                DimensionType.HEIGHT.customTextBindTo(textFields[1].textProperty()),
+            }
+        );
+        body[1] = new ShapeWithDimension<>(
+            (Rectangle)pane_shape.getChildren().get(3),
+            new DimensionType[]{
+                DimensionType.WIDTH.customTextBindTo(textFields[3].textProperty()).customTextPoisition(-0.5f),
+                DimensionType.HEIGHT.customTextBindTo(textFields[4].textProperty())
+            }
+        );
+        // neck[1].setDimensionTypeDefault();
+        // neck[0].setDimensionTypeDefault();
 
         reactiveLabels[0] = (Label)reactive.getChildren().get(0);
         reactiveLabels[1] = (Label)reactive.getChildren().get(1);
+// 绑定位置
+        body[0].shape.layoutXProperty().bind(body[0].shape.widthProperty().map(w->pane_shape.getWidth()/4 - (double)w/2));
+        neck[0].shape.layoutXProperty().bind(neck[0].shape.widthProperty().map(w->pane_shape.getWidth()/4 - (double)w/2));
+        body[0].shape.layoutYProperty().bind(body[0].shape.heightProperty().map(h->pane_shape.getHeight() - (double)h));
+        // neck[0].layoutYProperty需要绑定两个属性，一个是body[0].shape.layoutYProperty，一个是neck[0].shape.heightProperty
+        // 所以交给draw使之每次输入变化都更新(实际只需要body[0].shape.layoutYProperty或neck[0].shape.heightProperty变化才更新)
+        body[1].shape.layoutXProperty().bind(body[1].shape.widthProperty().map(w->pane_shape.getWidth()*3/4 - (double)w/2));
+        neck[1].shape.layoutXProperty().bind(neck[1].shape.widthProperty().map(w->pane_shape.getWidth()*3/4 - (double)w/2));
+        body[1].shape.layoutYProperty().bind(body[1].shape.heightProperty().map(h->pane_shape.getHeight()/2 - (double)h/2));
+        neck[1].shape.layoutYProperty().bind(neck[1].shape.heightProperty().map(h->pane_shape.getHeight()/2 - (double)h/2));
     }
 
-    double unit;
-    void draw(){
-        System.out.println(Arrays.toString(values));
+    public void draw(double unit){
         reactiveLabels[0].setText(String.format(
             "=1000×9.8×(%.2f+%.2f)×(%.2f×%.2f)=%.2f N",
             values[2], values[5], values[3], values[4],
@@ -81,43 +104,17 @@ public class ViewController implements Initializable {
             1000*9.8*(values[0]*values[1]*values[2]+values[3]*values[4]*values[5])
         ));
 
+// 触发"绑定位置"
+        neck[0].shape.setWidth(values[0]*unit);
+        neck[0].shape.setHeight(values[2]*unit);
+        body[0].shape.setWidth(values[3]*unit);
+        body[0].shape.setHeight(values[5]*unit);
 
-        double valueMax = Arrays.stream(values).max().getAsDouble();
-        unit = 1/valueMax * (Math.min(shape.getWidth()/2, shape.getHeight())-8);
-        System.out.println(shape.getHeight()+" "+unit);
-        var valuesC = values.clone();
-        for(int i=0; i<valuesC.length; i++) valuesC[i]=valuesC[i]*unit;
-        neck[0].setWidth(valuesC[0]);
-        neck[0].setHeight(valuesC[2]);  
-        neck[1].setWidth(valuesC[0]);   
-        neck[1].setHeight(valuesC[1]);
+        neck[1].shape.setWidth(values[0]*unit);
+        neck[1].shape.setHeight(values[1]*unit);
+        body[1].shape.setWidth(values[3]*unit);
+        body[1].shape.setHeight(values[4]*unit);
 
-        body[0].setWidth(valuesC[3]); 
-        body[0].setHeight(valuesC[5]);
-        body[1].setWidth(valuesC[3]); 
-        body[1].setHeight(valuesC[4]);
-
-        body[0].setLayoutX(shape.getWidth()/4-valuesC[3]/2);
-        body[0].setLayoutY(shape.getHeight()-valuesC[5]);
-        neck[0].setLayoutX(body[0].getLayoutX()+valuesC[3]/2-valuesC[0]/2);
-        neck[0].setLayoutY(body[0].getLayoutY()-valuesC[2]);
-
-        body[1].setLayoutX(3*shape.getWidth()/4-valuesC[3]/2);
-        body[1].setLayoutY(shape.getHeight()/2-valuesC[4]/2);
-        neck[1].setLayoutX(body[1].getLayoutX()+valuesC[3]/2-valuesC[0]/2);
-        neck[1].setLayoutY(body[1].getLayoutY()+valuesC[4]/2-valuesC[1]/2);
-
-        // addDimension(body[0].getLayoutX(), body[0].getLayoutY(), body[0].getLayoutX()+body[0].getWidth(), body[0].getLayoutY());
+        neck[0].shape.setLayoutY(body[0].shape.getLayoutY() - neck[0].shape.getHeight());
     }
-
-    // void addDimension(double x1, double y1, double x2, double y2){
-    //     Line line = new Line(x1, y1, x2, y2);
-    //     line.setStrokeWidth(2);
-    //     line.setStroke(Color.RED);
-    //     shape.getChildren().add(line);
-    //     Label label = new Label(String.format("%.2f", Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2))));
-    //     label.setLayoutX((x1+x2)/2);
-    //     label.setLayoutY((y1+y2)/2);
-    //     shape.getChildren().add(label);
-    // }
 }
